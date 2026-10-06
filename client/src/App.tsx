@@ -20,75 +20,85 @@ export function App() {
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
 
-  const handleNavigate = (page: string, params?: any) => {
-    if (page === 'search' && params?.query) {
-      setSearchQuery(params.query);
-    }
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const toggleDarkMode = () => {
+    setIsDarkMode((prev) => !prev);
   };
 
-  const handleSelectProperty = (property: Property) => {
+  const handlePropertySelect = (property: Property) => {
     setSelectedProperty(property);
     setCurrentPage('detail');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
-      <Navbar
-        currentPage={currentPage}
-        onNavigate={handleNavigate}
-        isDarkMode={isDarkMode}
-        onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-      />
-
-      <main className="flex-1">
-        {currentPage === 'home' && (
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'home':
+        return (
           <HomePage
             properties={mockProperties}
-            onSelectProperty={handleSelectProperty}
-            onNavigate={handleNavigate}
+            onNavigate={setCurrentPage}
+            onSelectProperty={handlePropertySelect}
           />
-        )}
-
-        {currentPage === 'search' && (
+        );
+      case 'search':
+        return (
           <SearchPage
-            properties={mockProperties}
             initialQuery={searchQuery}
-            onSelectProperty={handleSelectProperty}
+            properties={mockProperties}
+            onSelectProperty={handlePropertySelect}
           />
-        )}
-
-        {currentPage === 'detail' && selectedProperty && (
+        );
+      case 'detail':
+        return selectedProperty ? (
           <PropertyDetailPage
             property={selectedProperty}
             onBack={() => setCurrentPage('search')}
-            onNavigate={handleNavigate}
+            onNavigate={setCurrentPage}
           />
-        )}
+        ) : (
+          <HomePage
+            properties={mockProperties}
+            onNavigate={setCurrentPage}
+            onSelectProperty={handlePropertySelect}
+          />
+        );
+      case 'valuation':
+        return <ValuationPage onNavigate={setCurrentPage} />;
+      case 'dashboard':
+        return (
+          <DashboardPage
+            onSelectProperty={handlePropertySelect}
+          />
+        );
+      case 'pricing':
+        return <PricingPage />;
+      default:
+        return (
+          <HomePage
+            properties={mockProperties}
+            onNavigate={setCurrentPage}
+            onSelectProperty={handlePropertySelect}
+          />
+        );
+    }
+  };
 
-        {currentPage === 'valuation' && (
-          <ValuationPage onNavigate={handleNavigate} />
-        )}
-
-        {currentPage === 'dashboard' && (
-          <DashboardPage onSelectProperty={handleSelectProperty} />
-        )}
-
-        {currentPage === 'pricing' && (
-          <PricingPage />
-        )}
-      </main>
-
-      {currentPage !== 'search' && (
-        <Footer onNavigate={handleNavigate} />
-      )}
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+      <Navbar
+        currentPage={currentPage}
+        onNavigate={setCurrentPage}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={toggleDarkMode}
+      />
+      <main>{renderPage()}</main>
+      <Footer onNavigate={setCurrentPage} />
     </div>
   );
 }
